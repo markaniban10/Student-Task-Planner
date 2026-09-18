@@ -9,46 +9,65 @@
 // smaller, local scale between one parent and one child.)
 
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 export default function SubjectFilterBar({ subjects, selected, onSelect }) {
   // We always show "All" first, then every unique subject found in the data.
   const chips = ['All', ...subjects];
 
   return (
-    <ScrollView
-      horizontal // scroll sideways instead of the default vertical
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.row}
-    >
-      {chips.map((subject) => {
-        const isActive = subject === selected;
-        return (
-          <TouchableOpacity
-            key={subject}
-            onPress={() => onSelect(subject)}
-            style={[styles.chip, isActive && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-              {subject}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+    // `wrapper` is the fix for the "chips taking up too much space" bug:
+    // a horizontal ScrollView with no explicit height can stretch to fill
+    // whatever vertical space its parent flex column has left over, which
+    // is exactly what was happening — the chips grew into tall rectangles
+    // instead of staying as small pills. Giving the wrapper a fixed height
+    // caps the whole bar, no matter what's above or below it on screen.
+    <View style={styles.wrapper}>
+      <ScrollView
+        horizontal // scroll sideways instead of the default vertical
+        showsHorizontalScrollIndicator={false}
+        style={styles.scroll}
+        contentContainerStyle={styles.row}
+      >
+        {chips.map((subject) => {
+          const isActive = subject === selected;
+          return (
+            <TouchableOpacity
+              key={subject}
+              onPress={() => onSelect(subject)}
+              style={[styles.chip, isActive && styles.chipActive]}
+            >
+              <Text
+                style={[styles.chipText, isActive && styles.chipTextActive]}
+                numberOfLines={1}
+              >
+                {subject}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    height: 44, // fixed height for the ENTIRE filter bar — this is the key fix
+  },
+  scroll: {
+    flexGrow: 0, // tells the ScrollView "don't expand to fill extra space"
+  },
   row: {
-    flexDirection: 'row', // ScrollView's content also needs row direction
+    flexDirection: 'row',
+    alignItems: 'center', // vertically centers each chip inside the 44px bar
     paddingHorizontal: 16,
-    paddingVertical: 10,
   },
   chip: {
+    height: 32, // fixed, compact chip height — was unbounded before
+    justifyContent: 'center', // centers the label text inside that height
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    borderRadius: 16,
     backgroundColor: '#EFEFEF',
     marginRight: 8,
   },

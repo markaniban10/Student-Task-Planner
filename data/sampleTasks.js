@@ -13,44 +13,49 @@
 //   notes     -> string, optional extra detail shown on the detail screen
 //   completed -> boolean, true/false — this is what the checkbox toggles
 
+// data/sampleTasks.js
+//
+// This file is our "seed" data — a small starting set of tasks so the app
+// isn't empty the first time it runs.
+
 const sampleTasks = [
   {
     id: '1',
-    title: 'Finish HCI Usability Report',
-    subject: 'HCI',
-    deadline: '2026-09-25',
-    notes: 'Cover low-fidelity vs high-fidelity prototyping comparison.',
+    title: 'Defense in CS301',
+    subject: 'CS 301',
+    deadline: '2026-09-21',
+    notes: '',
     completed: false,
   },
   {
     id: '2',
-    title: 'Networking Lab: Subnetting Exercise',
-    subject: 'Networking',
-    deadline: '2026-09-20',
-    notes: 'Practice IP addressing and subnet mask calculations.',
+    title: 'MCO in Visual Arts',
+    subject: 'Visual Arts',
+    deadline: '2026-09-24',
+    notes: '',
     completed: false,
   },
   {
     id: '3',
-    title: 'OS Memory Management Problem Set',
-    subject: 'Operating Systems',
-    deadline: '2026-09-22',
-    notes: 'Paging, segmentation, and page replacement algorithms.',
-    completed: true,
+    title: 'Report in CS 301',
+    subject: 'CS 301',
+    deadline: '2026-09-25',
+    notes: '',
+    completed: false,
   },
   {
     id: '4',
-    title: 'React Native Prototype Submission',
-    subject: 'Mobile Programming',
-    deadline: '2026-09-30',
-    notes: 'Student Task & Assignment Planner app — this project!',
+    title: 'FINAL Examination',
+    subject: 'Final Exams',
+    deadline: '2026-09-28',
+    notes: '',
     completed: false,
   },
   {
     id: '5',
-    title: 'Read Chapter 11: Interaction Design',
-    subject: 'HCI',
-    deadline: '2026-09-18',
+    title: 'Mco in CS302',
+    subject: 'CS 302',
+    deadline: '2026-09-28',
     notes: '',
     completed: false,
   },
