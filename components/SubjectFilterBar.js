@@ -10,10 +10,16 @@
 
 import React from 'react';
 import { View, ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SubjectFilterBar({ subjects, selected, onSelect }) {
   // We always show "All" first, then every unique subject found in the data.
   const chips = ['All', ...subjects];
+
+  // Same pattern as TaskCard.js: pull the active palette and build the
+  // StyleSheet from it.
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
 
   return (
     // `wrapper` is the fix for the "chips taking up too much space" bug:
@@ -51,35 +57,37 @@ export default function SubjectFilterBar({ subjects, selected, onSelect }) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    height: 44, // fixed height for the ENTIRE filter bar — this is the key fix
-  },
-  scroll: {
-    flexGrow: 0, // tells the ScrollView "don't expand to fill extra space"
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center', // vertically centers each chip inside the 44px bar
-    paddingHorizontal: 16,
-  },
-  chip: {
-    height: 32, // fixed, compact chip height — was unbounded before
-    justifyContent: 'center', // centers the label text inside that height
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    backgroundColor: '#EFEFEF',
-    marginRight: 8,
-  },
-  chipActive: {
-    backgroundColor: '#0F6A45',
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-  },
-});
+function getStyles(colors) {
+  return StyleSheet.create({
+    wrapper: {
+      height: 44, // fixed height for the ENTIRE filter bar — this is the key fix
+    },
+    scroll: {
+      flexGrow: 0, // tells the ScrollView "don't expand to fill extra space"
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center', // vertically centers each chip inside the 44px bar
+      paddingHorizontal: 16,
+    },
+    chip: {
+      height: 32, // fixed, compact chip height — was unbounded before
+      justifyContent: 'center', // centers the label text inside that height
+      paddingHorizontal: 14,
+      borderRadius: 16,
+      backgroundColor: colors.chipBackground,
+      marginRight: 8,
+    },
+    chipActive: {
+      backgroundColor: colors.primary,
+    },
+    chipText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.chipText,
+    },
+    chipTextActive: {
+      color: '#FFFFFF',
+    },
+  });
+}
