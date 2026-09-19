@@ -14,9 +14,16 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { formatDeadline, getDeadlineLabel } from '../utils/dateHelpers';
+import { useTheme } from '../context/ThemeContext';
 
 export default function TaskCard({ task, onToggle, onPress }) {
   const { label, status } = getDeadlineLabel(task.deadline);
+
+  // useTheme() gives us the current color palette (light or dark). We build
+  // the StyleSheet from it below — this is the only thing dark mode changes
+  // in this file; every layout rule stays exactly as it was.
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
 
   return (
     // The whole card is wrapped in TouchableOpacity so tapping ANYWHERE on
@@ -50,7 +57,7 @@ export default function TaskCard({ task, onToggle, onPress }) {
           <View style={styles.subjectPill}>
             <Text style={styles.subjectPillText}>{task.subject}</Text>
           </View>
-          <Text style={[styles.deadlineText, deadlineColor(status)]}>
+          <Text style={[styles.deadlineText, deadlineColor(status, colors)]}>
             {label} · {formatDeadline(task.deadline)}
           </Text>
         </View>
@@ -60,94 +67,97 @@ export default function TaskCard({ task, onToggle, onPress }) {
 }
 
 // Returns a small style object based on urgency, so overdue tasks show red
-// and comfortably-far-away tasks show a neutral gray.
-function deadlineColor(status) {
+// and comfortably-far-away tasks show a neutral gray. Now takes `colors` so
+// the "neutral" gray is the right shade for the current theme too.
+function deadlineColor(status, colors) {
   switch (status) {
     case 'overdue':
-      return { color: '#D64545' };
+      return { color: colors.danger };
     case 'today':
     case 'soon':
-      return { color: '#C98A1B' };
+      return { color: colors.warning };
     default:
-      return { color: '#6B7280' };
+      return { color: colors.subtext };
   }
 }
 
 // ============================================================================
 // STYLESHEET — this is where the Flexbox layout lives.
 // ============================================================================
-// React Native doesn't use CSS files; StyleSheet.create() is the RN
-// equivalent. Every View defaults to `display: flex` already (unlike the
-// web, where you must opt in), and `flexDirection` defaults to 'column'
-// (unlike the web's default 'row'). That default-column behavior is why
-// `card` below only needs `flexDirection: 'row'` explicitly — we're
-// overriding the default to lay the checkbox and text side-by-side.
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row', // lay children left-to-right
-    alignItems: 'center', // vertically center checkbox + text
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    // Simple shadow so cards visually separate from the background.
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2, // Android's equivalent of shadow
-  },
-  checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: '#0F6A45',
-    alignItems: 'center', // center the checkmark horizontally
-    justifyContent: 'center', // center the checkmark vertically
-    marginRight: 12,
-  },
-  checkboxChecked: {
-    backgroundColor: '#0F6A45',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  textColumn: {
-    flex: 1, // take up all remaining horizontal space in the row
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 6,
-  },
-  titleCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#9CA3AF',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap', // allow the pill + date to wrap on narrow screens
-  },
-  subjectPill: {
-    backgroundColor: '#E6F4EC',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginRight: 8,
-  },
-  subjectPillText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#0F6A45',
-  },
-  deadlineText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-});
+// This is now a FUNCTION of `colors` instead of a plain object, so it's
+// rebuilt every render with whichever palette is currently active. For a
+// list this small that's cheap; for a huge list you'd memoize it with
+// useMemo(() => getStyles(colors), [colors]) instead. Every layout property
+// (flexDirection, padding, borderRadius, etc.) is identical to before —
+// only the color values now come from the `colors` parameter.
+function getStyles(colors) {
+  return StyleSheet.create({
+    card: {
+      flexDirection: 'row', // lay children left-to-right
+      alignItems: 'center', // vertically center checkbox + text
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginHorizontal: 16,
+      marginVertical: 6,
+      // Simple shadow so cards visually separate from the background.
+      shadowColor: '#000',
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2, // Android's equivalent of shadow
+    },
+    checkbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: 2,
+      borderColor: colors.primary,
+      alignItems: 'center', // center the checkmark horizontally
+      justifyContent: 'center', // center the checkmark vertically
+      marginRight: 12,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.primary,
+    },
+    checkmark: {
+      color: '#FFFFFF',
+      fontSize: 14,
+      fontWeight: 'bold',
+    },
+    textColumn: {
+      flex: 1, // take up all remaining horizontal space in the row
+    },
+    title: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 6,
+    },
+    titleCompleted: {
+      textDecorationLine: 'line-through',
+      color: colors.subtext,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap', // allow the pill + date to wrap on narrow screens
+    },
+    subjectPill: {
+      backgroundColor: colors.primaryLight,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      marginRight: 8,
+    },
+    subjectPillText: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.primary,
+    },
+    deadlineText: {
+      fontSize: 12,
+      fontWeight: '500',
+    },
+  });
+}
