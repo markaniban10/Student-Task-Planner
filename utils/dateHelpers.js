@@ -79,3 +79,19 @@ export function getDeadlineLabel(dateString) {
   }
   return { label: `Due in ${days}d`, status: 'upcoming' };
 }
+
+// toDateInputString
+// ---------------------------------------------------------------
+// Converts a JS Date object (what the native date picker gives us) into the
+// "YYYY-MM-DD" string our app stores and sorts by. We build the string
+// manually with padStart instead of calling toISOString(), because
+// toISOString() converts to UTC first — that can silently shift the date
+// backward or forward by a day depending on the user's timezone. Reading
+// getFullYear/getMonth/getDate keeps the date exactly as the user picked it,
+// in their local time.
+export function toDateInputString(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
