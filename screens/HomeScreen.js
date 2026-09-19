@@ -63,7 +63,7 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* --- Header --- */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Assignments</Text>
+        <Text style={styles.headerTitle}>My Tasks</Text>
         <Text style={styles.headerSubtitle}>
           {completedCount} of {tasks.length} completed
         </Text>
