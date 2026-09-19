@@ -4,6 +4,12 @@
 // TaskContext provides the task list: a Context + a custom hook (useTheme)
 // so any screen or component can read the current colors and call
 // toggleTheme() without passing props down through every level.
+//
+// Why colors live in ONE object instead of scattering `isDark ? 'x' : 'y'`
+// checks through every screen: every screen just asks for `colors.text`,
+// `colors.background`, etc. — it doesn't need to know or care whether dark
+// mode is on. If we ever want to add a third theme (e.g. "high contrast"),
+// we'd only add one more object here, not touch every screen.
 
 import React, { createContext, useContext, useState } from 'react';
 
@@ -39,8 +45,13 @@ const darkColors = {
 
 const ThemeContext = createContext(null);
 
+// ThemeProvider wraps the whole app (in App.js) so every screen — no matter
+// how deep in the navigation stack — can call useTheme().
 export function ThemeProvider({ children }) {
   const [isDark, setIsDark] = useState(false);
+
+  // Pick the whole color object based on the current mode. Screens never
+  // check `isDark` themselves for styling — they just use `colors.whatever`.
   const colors = isDark ? darkColors : lightColors;
 
   const toggleTheme = () => setIsDark((previous) => !previous);
@@ -52,6 +63,9 @@ export function ThemeProvider({ children }) {
   );
 }
 
+// Same pattern as useTasks() in TaskContext.js — a small custom hook so
+// screens can write `const { colors, toggleTheme } = useTheme();` instead of
+// importing useContext and ThemeContext separately every time.
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {
