@@ -6,11 +6,13 @@
 //   3. Sort the filtered tasks by deadline (soonest first)
 //   4. Render them efficiently with FlatList
 //   5. Let the user toggle completion, open a task's details, or add a new one
+//   6. Let the user flip light/dark mode from a button in the header
 
 import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTasks } from '../context/TaskContext';
+import { useTheme } from '../context/ThemeContext';
 import { sortTasksByDeadline } from '../utils/dateHelpers';
 import TaskCard from '../components/TaskCard';
 import SubjectFilterBar from '../components/SubjectFilterBar';
@@ -18,6 +20,12 @@ import SubjectFilterBar from '../components/SubjectFilterBar';
 export default function HomeScreen({ navigation }) {
   // useTasks() pulls {tasks, dispatch} out of TaskContext (see context/TaskContext.js).
   const { tasks, dispatch } = useTasks();
+
+  // useTheme() pulls the current palette plus the toggle function out of
+  // ThemeContext (see context/ThemeContext.js). `isDark` decides which icon
+  // (🌙 or ☀️) the toggle button shows.
+  const { colors, isDark, toggleTheme } = useTheme();
+  const styles = getStyles(colors);
 
   // Local UI state — this ONLY affects what HomeScreen displays, so it
   // doesn't need to live in the shared context. useState is correct here.
@@ -61,12 +69,25 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* --- Header --- */}
+      {/* --- Header ---
+          flexDirection: 'row' + justifyContent: 'space-between' is what
+          pins the title on the left and the toggle button on the right,
+          with any leftover space pushed between them. */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Tasks</Text>
-        <Text style={styles.headerSubtitle}>
-          {completedCount} of {tasks.length} completed
-        </Text>
+        <View>
+          <Text style={styles.headerTitle}>My Tasks</Text>
+          <Text style={styles.headerSubtitle}>
+            {completedCount} of {tasks.length} completed
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.themeToggle}
+          onPress={toggleTheme}
+          accessibilityLabel="Toggle dark mode"
+        >
+          <Text style={styles.themeToggleIcon}>{isDark ? '☀️' : '🌙'}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* --- Subject filter chips --- */}
@@ -105,56 +126,74 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1, // fill the entire screen
-    backgroundColor: '#F5F6F8',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  listContent: {
-    paddingBottom: 100, // leave room so the FAB never covers the last card
-    flexGrow: 1, // lets ListEmptyComponent center itself when the list is empty
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#9CA3AF',
-    marginTop: 40,
-    fontSize: 14,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 28,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#0F6A45',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
-  },
-  fabText: {
-    color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: '400',
-    marginTop: -2, // small nudge so the + looks visually centered
-  },
-});
+function getStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1, // fill the entire screen
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between', // title left, toggle right
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 4,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    headerSubtitle: {
+      fontSize: 13,
+      color: colors.subtext,
+      marginTop: 2,
+    },
+    themeToggle: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    themeToggleIcon: {
+      fontSize: 18,
+    },
+    listContent: {
+      paddingBottom: 100, // leave room so the FAB never covers the last card
+      flexGrow: 1, // lets ListEmptyComponent center itself when the list is empty
+    },
+    emptyText: {
+      textAlign: 'center',
+      color: colors.subtext,
+      marginTop: 40,
+      fontSize: 14,
+    },
+    fab: {
+      position: 'absolute',
+      right: 20,
+      bottom: 28,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 5,
+    },
+    fabText: {
+      color: '#FFFFFF',
+      fontSize: 30,
+      fontWeight: '400',
+      marginTop: -2, // small nudge so the + looks visually centered
+    },
+  });
+}
