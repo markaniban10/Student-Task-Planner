@@ -21,7 +21,7 @@
 const sampleTasks = [
   {
     id: '1',
-    title: 'Defense in CS301',
+    title: 'Defense in CS301 SoftwareEngineering',
     subject: 'CS 301',
     deadline: '2026-09-21',
     notes: '',
