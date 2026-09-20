@@ -68,6 +68,25 @@ StudentPlanner/
 - Every interaction updates real state and the UI reflects it immediately
   (checkbox fills in, strikethrough appears, list re-sorts, new task appears).
 
+
+### Dark Mode & Date Picker (added after initial defense)
+- **Dark mode:** `context/ThemeContext.js` holds two color palettes
+  (`lightColors` / `darkColors`) behind a `ThemeProvider`, following the exact
+  same Context + custom-hook pattern as `TaskContext.js`. Every screen and
+  component reads colors via `useTheme()` instead of hardcoding hex values,
+  so toggling the button in the top-right corner of `HomeScreen` (🌙/☀️)
+  re-themes the entire app instantly — no screen needs to know dark mode
+  exists beyond calling the hook.
+- **Date picker:** `AddTaskScreen.js` now uses
+  `@react-native-community/datetimepicker` instead of a free-typed
+  `YYYY-MM-DD` text field. This removes an entire class of bugs (typos,
+  wrong format, impossible dates like `2026-13-40`) since the picker only
+  ever returns a real, valid `Date`. `utils/dateHelpers.js` gained one small
+  pure function, `toDateInputString()`, to convert that `Date` back into the
+  `"YYYY-MM-DD"` string the rest of the app (sorting, storage) already
+  expects.
+
+
 ### Technical Defense & Q&A (50%)
 See the "Likely Q&A" section below — every answer points to a specific file
 and line of logic so you can explain it confidently.
@@ -141,3 +160,18 @@ Persist tasks with `AsyncStorage` (React Native's key-value local storage) so
 they survive an app restart, add push notifications for approaching
 deadlines, or swap the seed data for a real backend API call inside
 `TaskProvider`'s initial state.
+
+**Q: How does dark mode work across the whole app without passing props everywhere?**
+Same idea as `TaskContext` — `ThemeContext.js` wraps the app in `App.js` with
+a `ThemeProvider`, storing `isDark` in `useState` and deriving a `colors`
+object from it. Any screen calls `useTheme()` to get `{ colors, isDark,
+toggleTheme }`. Styles were converted from static `StyleSheet.create({...})`
+objects into `getStyles(colors)` functions, so they're rebuilt with the
+correct palette every time the theme changes.
+
+**Q: Why switch from a text input to a date picker for the deadline?**
+A typed date can't be validated for "is this a real, sensible date" beyond a
+regex shape check — `2026-02-30` passes `/^\d{4}-\d{2}-\d{2}$/` but doesn't
+exist. `@react-native-community/datetimepicker` opens the OS's native
+calendar UI, so the value is guaranteed to be a real date the moment the user
+picks it, eliminating that validation step entirely.
