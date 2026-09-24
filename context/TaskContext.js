@@ -60,6 +60,26 @@ function taskReducer(state, action) {
       return state.filter((task) => task.id !== action.payload.id);
     }
 
+
+        case 'COMPLETE_TASKS': {
+      // action.payload = { ids: [...] } — an array of task ids picked in
+      // HomeScreen's selection mode. .includes() checks membership; every
+      // task NOT in that list is returned unchanged, same principle as
+      // TOGGLE_TASK but applied to many tasks at once instead of one.
+      return state.map((task) =>
+        action.payload.ids.includes(task.id)
+          ? { ...task, completed: true }
+          : task
+      );
+    }
+
+    case 'DELETE_TASKS': {
+      // action.payload = { ids: [...] } — keep every task whose id is NOT
+      // in the list. Same idea as DELETE_TASK, just filtering out many ids
+      // instead of one.
+      return state.filter((task) => !action.payload.ids.includes(task.id));
+    }
+
     default:
       // Always return state unchanged for an action type we don't recognize.
       return state;
