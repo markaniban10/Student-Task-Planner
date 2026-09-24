@@ -2,44 +2,88 @@
 //
 // This is a "presentational" component: it receives data and callback
 // functions via PROPS and just renders UI — it doesn't know where the data
-// came from or what happens when you press it. That separation (TaskCard
-// doesn't import TaskContext itself) makes it reusable and easy to test.
+// came from or what happens when you press it.
 //
 // Props this component expects:
-//   task     -> the task object {id, title, subject, deadline, completed, notes}
-//   onToggle -> function to call when the checkbox circle is pressed
-//   onPress  -> function to call when the card itself is pressed (navigates
-//               to the detail screen)
+//   task           -> the task object {id, title, subject, deadline, completed, notes}
+//   onToggle       -> call when the checkbox is pressed OUTSIDE selection mode
+//                      (marks this one task complete/incomplete)
+//   onPress        -> call when the card is pressed OUTSIDE selection mode
+//                      (navigates to the detail screen)
+//   selectionMode  -> true once the user has long-pressed any task in the list
+//   isSelected     -> whether THIS task is currently checked for a bulk action
+//   onLongPress    -> call on long-press (starts or extends selection)
+//   onToggleSelect -> call to check/uncheck this task WHILE selectionMode is true
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { formatDeadline, getDeadlineLabel } from '../utils/dateHelpers';
 import { useTheme } from '../context/ThemeContext';
 
-export default function TaskCard({ task, onToggle, onPress }) {
+export default function TaskCard({
+  task,
+  onToggle,
+  onPress,
+  selectionMode,
+  isSelected,
+  onLongPress,
+  onToggleSelect,
+}) {
   const { label, status } = getDeadlineLabel(task.deadline);
-
-  // useTheme() gives us the current color palette (light or dark). We build
-  // the StyleSheet from it below — this is the only thing dark mode changes
-  // in this file; every layout rule stays exactly as it was.
   const { colors } = useTheme();
   const styles = getStyles(colors);
 
+  // A short tap does different things depending on mode: normally it opens
+  // the detail screen, but once selection mode is active, taps just
+  // check/uncheck the task instead — the whole point of selection mode is
+  // that ordinary navigation is paused until the user exits it.
+  const handlePress = () => {
+    if (selectionMode) {
+      onToggleSelect(task.id);
+    } else {
+      onPress(task);
+    }
+  };
+
+  // The checkbox circle does double duty: outside selection mode it marks a
+  // single task done/not-done (its original job); inside selection mode it
+  // becomes just another way to check/uncheck the task, matching the rest
+  // of the card.
+  const handleCheckboxPress = () => {
+    if (selectionMode) {
+      onToggleSelect(task.id);
+    } else {
+      onToggle(task.id);
+    }
+  };
+
+  // Long-pressing always reports up to HomeScreen, which decides what that
+  // means: if nothing is selected yet, it STARTS selection mode with this
+  // task; if selection mode is already running, it just toggles this task
+  // the same as a tap would.
+  const handleLongPress = () => {
+    onLongPress(task.id);
+  };
+
+  // What the leading circle shows: normally it reflects `completed`, but
+  // while selecting, it reflects `isSelected` instead, so the user can see
+  // at a glance which tasks are currently picked for the bulk action.
+  const circleFilled = selectionMode ? isSelected : task.completed;
+
   return (
-    // The whole card is wrapped in TouchableOpacity so tapping ANYWHERE on
-    // it (except the checkbox, which stops the tap from bubbling — see
-    // below) navigates to the task's detail screen.
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, selectionMode && isSelected && styles.cardSelected]}
       activeOpacity={0.7}
-      onPress={() => onPress(task)}
+      onPress={handlePress}
+      onLongPress={handleLongPress}
+      delayLongPress={350} // ms to hold before it counts as a long-press
     >
-      {/* --- Checkbox column --- */}
+      {/* --- Checkbox / selection-indicator column --- */}
       <TouchableOpacity
-        style={[styles.checkbox, task.completed && styles.checkboxChecked]}
-        onPress={() => onToggle(task.id)}
+        style={[styles.checkbox, circleFilled && styles.checkboxChecked]}
+        onPress={handleCheckboxPress}
       >
-        {task.completed && <Text style={styles.checkmark}>✓</Text>}
+        {circleFilled && <Text style={styles.checkmark}>✓</Text>}
       </TouchableOpacity>
 
       {/* --- Text column: takes up the remaining space (flex: 1) --- */}
@@ -51,8 +95,6 @@ export default function TaskCard({ task, onToggle, onPress }) {
           {task.title}
         </Text>
 
-        {/* This row uses Flexbox's row direction to place the subject
-            "pill" and the deadline label side-by-side. */}
         <View style={styles.metaRow}>
           <View style={styles.subjectPill}>
             <Text style={styles.subjectPillText}>{task.subject}</Text>
@@ -66,9 +108,6 @@ export default function TaskCard({ task, onToggle, onPress }) {
   );
 }
 
-// Returns a small style object based on urgency, so overdue tasks show red
-// and comfortably-far-away tasks show a neutral gray. Now takes `colors` so
-// the "neutral" gray is the right shade for the current theme too.
 function deadlineColor(status, colors) {
   switch (status) {
     case 'overdue':
@@ -81,31 +120,29 @@ function deadlineColor(status, colors) {
   }
 }
 
-// ============================================================================
-// STYLESHEET — this is where the Flexbox layout lives.
-// ============================================================================
-// This is now a FUNCTION of `colors` instead of a plain object, so it's
-// rebuilt every render with whichever palette is currently active. For a
-// list this small that's cheap; for a huge list you'd memoize it with
-// useMemo(() => getStyles(colors), [colors]) instead. Every layout property
-// (flexDirection, padding, borderRadius, etc.) is identical to before —
-// only the color values now come from the `colors` parameter.
 function getStyles(colors) {
   return StyleSheet.create({
     card: {
-      flexDirection: 'row', // lay children left-to-right
-      alignItems: 'center', // vertically center checkbox + text
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surface,
       borderRadius: 12,
       padding: 14,
       marginHorizontal: 16,
       marginVertical: 6,
-      // Simple shadow so cards visually separate from the background.
       shadowColor: '#000',
       shadowOpacity: 0.06,
       shadowRadius: 4,
       shadowOffset: { width: 0, height: 2 },
-      elevation: 2, // Android's equivalent of shadow
+      elevation: 2,
+      // Selected cards get a border below — defined separately so it only
+      // applies conditionally (see cardSelected).
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    cardSelected: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primaryLight,
     },
     checkbox: {
       width: 26,
@@ -113,8 +150,8 @@ function getStyles(colors) {
       borderRadius: 13,
       borderWidth: 2,
       borderColor: colors.primary,
-      alignItems: 'center', // center the checkmark horizontally
-      justifyContent: 'center', // center the checkmark vertically
+      alignItems: 'center',
+      justifyContent: 'center',
       marginRight: 12,
     },
     checkboxChecked: {
@@ -126,7 +163,7 @@ function getStyles(colors) {
       fontWeight: 'bold',
     },
     textColumn: {
-      flex: 1, // take up all remaining horizontal space in the row
+      flex: 1,
     },
     title: {
       fontSize: 15,
@@ -141,7 +178,7 @@ function getStyles(colors) {
     metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      flexWrap: 'wrap', // allow the pill + date to wrap on narrow screens
+      flexWrap: 'wrap',
     },
     subjectPill: {
       backgroundColor: colors.primaryLight,
